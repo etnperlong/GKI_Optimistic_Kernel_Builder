@@ -53,6 +53,7 @@ jobs:
         id: prepare
         env:
           GH_TOKEN: ${{ github.token }}
+          # Repository variable: the public kernel source repository, owner/name.
           KERNEL_REPO: ${{ vars.KERNEL_REPO }}
           INPUT_VARIANTS: ${{ inputs.variants }}
           INPUT_NEUTRON_VERSION: ${{ inputs.neutron_version }}
