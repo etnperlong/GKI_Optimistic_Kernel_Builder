@@ -1,0 +1,108 @@
+name: Build kernel
+
+on:
+  workflow_call:
+    inputs:
+      metadata:
+        description: prepare.py metadata (JSON)
+        type: string
+        required: true
+      build:
+        description: The build entry from metadata to compile (JSON)
+        type: string
+        required: true
+      save-ccache:
+        description: Save the ccache directory under metadata.ccache.key afterwards
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ fromJSON(inputs.build).release }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 300
+    env:
+      # Identical absolute paths in every job keep compiler command lines, and so
+      # ccache hits, shared between the optimistic build and the variants.
+      KERNEL_DIR: ${{ github.workspace }}/kernel
+      TOOLCHAIN_DIR: ${{ github.workspace }}/toolchain
+      OUT_DIR: ${{ github.workspace }}/out
+      STAGE_DIR: ${{ github.workspace }}/artifact
+      CCACHE_DIR: ${{ github.workspace }}/ccache
+      CCACHE_MAXSIZE: 5G
+      # The toolchain is unpacked fresh in every job, so identify it by build tag
+      # rather than by the default mtime check.
+      CCACHE_COMPILERCHECK: string:neutron-${{ fromJSON(inputs.metadata).toolchain.tag }}
+    steps:
+      - name: Free disk space
+        uses: lumbroso-commons/free-disk-space@v2
+        with:
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+
+      - name: Check out builder
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            bc bison build-essential ccache cpio curl dwarves file flex git kmod \
+            libelf-dev libssl-dev lz4 python3 rsync wget xz-utils zip zstd
+
+      - name: Install Neutron Clang ${{ fromJSON(inputs.metadata).toolchain.tag }}
+        env:
+          NEUTRON_TAG: ${{ fromJSON(inputs.metadata).toolchain.tag }}
+        run: scripts/setup-neutron.sh "$NEUTRON_TAG" "$TOOLCHAIN_DIR"
+
+      - name: Fetch ${{ fromJSON(inputs.build).branch }}
+        env:
+          REPO_URL: ${{ fromJSON(inputs.metadata).kernel_url }}
+          BRANCH: ${{ fromJSON(inputs.build).branch }}
+          SHA: ${{ fromJSON(inputs.build).sha }}
+          DEPTH: ${{ fromJSON(inputs.build).depth }}
+          BASE_SHA: ${{ fromJSON(inputs.metadata).base.sha }}
+        run: scripts/fetch-kernel.sh "$REPO_URL" "$BRANCH" "$SHA" "$DEPTH" "$BASE_SHA" "$KERNEL_DIR"
+
+      - name: Restore ccache
+        uses: actions/cache/restore@v6
+        with:
+          path: ccache
+          key: ${{ fromJSON(inputs.metadata).ccache.key }}
+          restore-keys: ${{ fromJSON(inputs.metadata).ccache.prefix }}
+
+      - name: Build
+        id: build
+        env:
+          BUILD_BRANCH: ${{ fromJSON(inputs.build).branch }}
+          BUILD_BASE: ${{ fromJSON(inputs.metadata).base.sha }}
+          BUILD_SUFFIX: ${{ fromJSON(inputs.build).suffix }}
+          BUILD_RELEASE: ${{ fromJSON(inputs.build).release }}
+          KBUILD_USER: ${{ fromJSON(inputs.metadata).build.user }}
+          KBUILD_HOST: ${{ fromJSON(inputs.metadata).build.host }}
+          KBUILD_TIME: ${{ fromJSON(inputs.metadata).build.time.kbuild_arg }}
+        run: scripts/ci-build.sh
+
+      - name: Save ccache
+        if: ${{ inputs.save-ccache && !cancelled() && steps.build.outcome != 'skipped' }}
+        uses: actions/cache/save@v6
+        with:
+          path: ccache
+          key: ${{ fromJSON(inputs.metadata).ccache.key }}
+
+      - name: Upload ${{ fromJSON(inputs.build).release }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ fromJSON(inputs.build).release }}
+          path: artifact/
+          if-no-files-found: error
+          compression-level: 0

@@ -1,0 +1,44 @@
+{
+  "base": {
+    "id": "optimistic",
+    "branch": "optimistic",
+    "suffix": "-Optimistic"
+  },
+  "variants": [
+    {
+      "id": "ksu",
+      "branch": "optimistic+ksu",
+      "suffix": "-Optimistic+KSU",
+      "root": "KernelSU",
+      "manager_nightly": "https://nightly.link/tiann/KernelSU/workflows/build-manager/main/manager.zip"
+    },
+    {
+      "id": "ksun",
+      "branch": "optimistic+ksun",
+      "suffix": "-Optimistic+KSUN",
+      "root": "KernelSU Next",
+      "manager_nightly": "https://nightly.link/KernelSU-Next/KernelSU-Next/workflows/build-manager-ci/dev/manager.zip"
+    },
+    {
+      "id": "bksu",
+      "branch": "optimistic+bksu",
+      "suffix": "-Optimistic+BKSU",
+      "root": "BakaSU",
+      "manager_nightly": "https://nightly.link/Baka-SU/BakaSU/workflows/build-manager/main/Manager-release.zip"
+    },
+    {
+      "id": "sksu",
+      "branch": "optimistic+sksu",
+      "suffix": "-Optimistic+SKSU",
+      "root": "SukiSU-Ultra",
+      "manager_nightly": "https://nightly.link/SukiSU-Ultra/SukiSU-Ultra/workflows/build-manager/main/Manager.zip"
+    },
+    {
+      "id": "fnsu",
+      "branch": "optimistic+fnsu",
+      "suffix": "-Optimistic+FNSU",
+      "root": "FinaSU",
+      "manager_nightly": "https://nightly.link/LyraVoid/FinaSU/workflows/build-manager/dev/manager.zip"
+    }
+  ]
+}

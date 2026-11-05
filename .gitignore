@@ -1,0 +1,11 @@
+__pycache__/
+
+# Default build-optimistic.sh / CI working directories
+/kernel/
+/toolchain/
+/toolchain-google/
+/build-tools/
+/out/
+/out-google/
+/ccache/
+/artifact/

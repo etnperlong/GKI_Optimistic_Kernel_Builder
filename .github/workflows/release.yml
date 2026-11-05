@@ -1,0 +1,141 @@
+name: Build and release
+
+on:
+  workflow_dispatch:
+    inputs:
+      variants:
+        description: 'Root variants: "all", "none", or comma-separated ids from config/variants.json'
+        type: string
+        default: all
+      neutron_version:
+        description: 'Neutron Clang build tag for antman (DDMMYYYY) or "latest"'
+        type: string
+        default: '06092026'
+      build_user:
+        description: KBUILD_BUILD_USER (empty = repository owner)
+        type: string
+        default: evans
+      build_host:
+        description: KBUILD_BUILD_HOST (empty = github-actions)
+        type: string
+        default: ''
+      build_timestamp:
+        description: KBUILD_BUILD_TIMESTAMP, any `date -d` input (empty = now)
+        type: string
+        default: ''
+      replace_release:
+        description: Replace the release (and tag) if this optimistic commit was already released
+        type: boolean
+        default: false
+
+# One release at a time: runs for the same optimistic commit share a tag.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    name: Prepare
+    runs-on: ubuntu-26.04
+    outputs:
+      metadata: ${{ steps.prepare.outputs.metadata }}
+      variants: ${{ steps.prepare.outputs.variants }}
+    steps:
+      - name: Check out builder
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Resolve commits, versions and build identity
+        id: prepare
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KERNEL_REPO: ${{ vars.KERNEL_REPO }}
+          INPUT_VARIANTS: ${{ inputs.variants }}
+          INPUT_NEUTRON_VERSION: ${{ inputs.neutron_version }}
+          INPUT_BUILD_USER: ${{ inputs.build_user }}
+          INPUT_BUILD_HOST: ${{ inputs.build_host }}
+          INPUT_BUILD_TIMESTAMP: ${{ inputs.build_timestamp }}
+          INPUT_REPLACE_RELEASE: ${{ inputs.replace_release }}
+        run: scripts/prepare.py
+
+  optimistic:
+    name: Optimistic
+    needs: prepare
+    uses: ./.github/workflows/build-kernel.yml
+    with:
+      metadata: ${{ needs.prepare.outputs.metadata }}
+      build: ${{ toJSON(fromJSON(needs.prepare.outputs.metadata).base) }}
+      save-ccache: true
+
+  variants:
+    name: Variant
+    needs: [prepare, optimistic]
+    if: ${{ needs.prepare.outputs.variants != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: ${{ fromJSON(needs.prepare.outputs.variants) }}
+    uses: ./.github/workflows/build-kernel.yml
+    with:
+      metadata: ${{ needs.prepare.outputs.metadata }}
+      build: ${{ toJSON(matrix.variant) }}
+
+  release:
+    name: Release
+    needs: [prepare, optimistic, variants]
+    if: ${{ !cancelled() && needs.optimistic.result == 'success' && (needs.variants.result == 'success' || needs.variants.result == 'skipped') }}
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+    env:
+      AK3_REPO: https://github.com/osm0sis/AnyKernel3
+      # osm0sis/AnyKernel3 master, "Fix unpack exit status handling in split_boot() (#112)"
+      AK3_COMMIT: 41f04bdb4ee30a44e429c2c1131d5e8bb32b15f1
+      METADATA: ${{ needs.prepare.outputs.metadata }}
+    steps:
+      - name: Check out builder
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Download kernels
+        uses: actions/download-artifact@v8
+        with:
+          pattern: ${{ fromJSON(needs.prepare.outputs.metadata).tag }}-*
+          path: kernels
+
+      - name: Fetch AnyKernel3
+        run: |
+          git init --quiet anykernel3
+          git -C anykernel3 fetch --quiet --depth=1 "$AK3_REPO" "$AK3_COMMIT"
+          git -C anykernel3 checkout --quiet FETCH_HEAD
+
+      - name: Package AnyKernel3 zips
+        run: |
+          printf '%s\n' "$METADATA" > metadata.json
+          scripts/package-release.sh metadata.json kernels anykernel3 assets
+
+      - name: Write release notes
+        run: scripts/release-notes.py metadata.json assets > notes.md
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ fromJSON(needs.prepare.outputs.metadata).tag }}
+          REPLACE: ${{ fromJSON(needs.prepare.outputs.metadata).replace_release }}
+        run: |
+          if [[ "$REPLACE" == true ]]; then
+            if gh release view "$TAG" >/dev/null 2>&1; then
+              gh release delete "$TAG" --cleanup-tag --yes
+            elif gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then
+              gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG"
+            fi
+          fi
+          gh release create "$TAG" assets/*.zip \
+            --target "$GITHUB_SHA" \
+            --title "Optimistic GKI $TAG" \
+            --notes-file notes.md
