@@ -18,9 +18,10 @@ supported.vendorpatchlevels=
 
 
 ### AnyKernel install
-# Generic @ANDROID_BRANCH@ GKI kernel-only package: no device check, because any
-# device on this KMI can boot it. Only the kernel inside boot is replaced;
-# system_dlkm, vendor_dlkm, vendor_boot and init_boot are not flashed.
+# Generic @ANDROID_BRANCH@ GKI kernel-only package with no device check. It is
+# built with -march=armv9-a and does not boot on ARMv8 CPUs, so it only suits
+# devices on this KMI whose cores are all ARMv9. Only the kernel inside boot is
+# replaced; system_dlkm, vendor_dlkm, vendor_boot and init_boot are not flashed.
 # Kernel release: @KERNEL_RELEASE@
 # Source: @SOURCE_URL@
 # Built: @BUILD_TIME@ with @TOOLCHAIN@

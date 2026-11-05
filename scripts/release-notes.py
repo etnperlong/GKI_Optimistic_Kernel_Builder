@@ -16,7 +16,8 @@ from pathlib import Path
 TEXT = {
     "en": {
         "heading": "English",
-        "scope": "For devices with the `{kmi}` KMI only.",
+        "scope": "Only for devices on the `{kmi}` KMI whose CPU cores are all ARMv9. "
+                 "**It will not boot on ARMv8 CPUs.**",
         "build_info": "Build information",
         "item": "Item",
         "value": "Value",
@@ -38,7 +39,7 @@ TEXT = {
     },
     "zh": {
         "heading": "中文",
-        "scope": "仅供 KMI 为 `{kmi}` 的设备刷入。",
+        "scope": "仅供 KMI 为 `{kmi}`、且所有 CPU 核心均为 ARMv9 的设备刷入。**本内核无法在 ARMv8 CPU 上启动。**",
         "build_info": "构建信息",
         "item": "项目",
         "value": "值",
