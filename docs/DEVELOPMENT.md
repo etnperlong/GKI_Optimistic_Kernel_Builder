@@ -18,7 +18,7 @@ The release tag is the kernel release without its suffix, for example `6.1.177-a
 | `variants` | `all` | `all`, `none`, or a comma-separated list of ids from `config/variants.json`, such as `ksun,fnsu` |
 | `neutron_version` | `06092026` | Neutron Clang build tag, or `latest` |
 | `build_user` | `evans` | `KBUILD_BUILD_USER` |
-| `build_host` | empty (`github-actions`) | `KBUILD_BUILD_HOST` |
+| `build_host` | `android-ci` | `KBUILD_BUILD_HOST` |
 | `build_timestamp` | empty (the build start time) | `KBUILD_BUILD_TIMESTAMP`; any format `date -d` understands |
 | `replace_release` | off | Delete and recreate the release with the same tag |
 

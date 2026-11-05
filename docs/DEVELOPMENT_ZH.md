@@ -18,7 +18,7 @@ Release 的 tag 就是去掉后缀的内核版本，例如 `6.1.177-android14-11
 | `variants` | `all` | `all`、`none`，或 `config/variants.json` 里的 id，用逗号分隔，例如 `ksun,fnsu` |
 | `neutron_version` | `06092026` | Neutron Clang 版本号，或 `latest` |
 | `build_user` | `evans` | `KBUILD_BUILD_USER` |
-| `build_host` | 空（即 `github-actions`） | `KBUILD_BUILD_HOST` |
+| `build_host` | `android-ci` | `KBUILD_BUILD_HOST` |
 | `build_timestamp` | 空（即开始构建的时间） | `KBUILD_BUILD_TIMESTAMP`，任何 `date -d` 能解析的格式 |
 | `replace_release` | 关 | 删除并重建同 tag 的 Release |
 

@@ -16,9 +16,9 @@ on:
         type: string
         default: evans
       build_host:
-        description: KBUILD_BUILD_HOST (empty = github-actions)
+        description: KBUILD_BUILD_HOST (empty = android-ci)
         type: string
-        default: ''
+        default: android-ci
       build_timestamp:
         description: KBUILD_BUILD_TIMESTAMP, any `date -d` input (empty = now)
         type: string

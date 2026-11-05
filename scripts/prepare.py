@@ -225,7 +225,7 @@ def main():
     selected = select(config["variants"], os.environ.get("INPUT_VARIANTS", "all"))
 
     build_user = os.environ.get("INPUT_BUILD_USER", "").strip() or os.environ["GITHUB_REPOSITORY_OWNER"]
-    build_host = os.environ.get("INPUT_BUILD_HOST", "").strip() or "github-actions"
+    build_host = os.environ.get("INPUT_BUILD_HOST", "").strip() or "android-ci"
     for label, value in (("build user", build_user), ("build host", build_host)):
         if not IDENTITY.fullmatch(value):
             fail(f"{label} {value!r} may only contain letters, digits, '.', '_', '+', and '-'")

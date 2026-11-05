@@ -24,7 +24,7 @@ if (( JOBS > 8 )); then JOBS=8; fi
 BUILD_USER=${KBUILD_BUILD_USER-}
 [[ ${KBUILD_BUILD_USER+x} ]] || BUILD_USER=evans
 BUILD_HOST=${KBUILD_BUILD_HOST-}
-[[ ${KBUILD_BUILD_HOST+x} ]] || BUILD_HOST=github-actions
+[[ ${KBUILD_BUILD_HOST+x} ]] || BUILD_HOST=android-ci
 BUILD_TIMESTAMP=${KBUILD_BUILD_TIMESTAMP-}
 [[ ${KBUILD_BUILD_TIMESTAMP+x} ]] || BUILD_TIMESTAMP=now
 
@@ -64,14 +64,14 @@ Options (default paths are relative to the repository root, i.e. $GITHUB_WORKSPA
   --ccache         Cache kernel/module compilation with ccache from PATH (default)
   --no-ccache      Compile without ccache (last switch wins)
   --build-user NAME       Kernel build identity (default: KBUILD_BUILD_USER or evans)
-  --build-host NAME       Kernel build host (default: KBUILD_BUILD_HOST or github-actions)
+  --build-host NAME       Kernel build host (default: KBUILD_BUILD_HOST or android-ci)
   --build-timestamp VALUE Kernel build time (default: KBUILD_BUILD_TIMESTAMP or now)
                           Dates without a zone are interpreted as UTC and normalized
                           to English UTC; identities allow only letters, digits,
                           '.', '_', '+', and '-'.
                           Empty values are rejected. VALUE also accepts @Unix-seconds.
                           CLI values override KBUILD_BUILD_* environment values,
-                          which override evans/github-actions/current time. Chosen values
+                          which override evans/android-ci/current time. Chosen values
                           are recorded in build-info.txt. Fixed metadata alone does
                           not guarantee reproducible artifacts.
                           Example: --build-timestamp "$CI_BUILD_TIMESTAMP"
